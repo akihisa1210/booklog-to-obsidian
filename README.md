@@ -1,0 +1,2 @@
+# booklog-to-obsidian
+ブクログの本棚のCSVデータをObsidianの特定のフォルダ以下に1冊1ページでインポートするスクリプト
