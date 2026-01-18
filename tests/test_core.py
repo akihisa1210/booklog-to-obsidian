@@ -83,3 +83,35 @@ rating: 5
     actual_content = expected_file.read_text(encoding="utf-8")
 
     assert actual_content == expected_content
+
+
+def test_sanitize_filename():
+    filename = " /a "
+
+    from booklog_sync.core import _sanitize_filename
+
+    assert _sanitize_filename(filename) == "_a"
+
+
+def test_generate_filename():
+    from booklog_sync.core import generate_filename
+
+    title = generate_filename("テスト作者名", "テストタイトル", "テスト出版社", "2020")
+    assert title == "テスト作者名『テストタイトル』（テスト出版社、2020）.md"
+
+
+def test_generate_filename_long():
+    from booklog_sync.core import generate_filename
+
+    # 作者名、タイトル、出版社、出版年をファイル名のフォーマットに合わせて結合すると198バイトになるテストデータ。
+    # 拡張.mdを付けると201バイトとなり、このツールのファイル名文字数上限の200バイトを超えてしまう。
+    title = generate_filename(
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a",
+        "a",
+        "2020",
+    )
+    assert (
+        title
+        == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa『a』（a、2020.md"
+    )
