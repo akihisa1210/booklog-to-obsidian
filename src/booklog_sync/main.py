@@ -25,10 +25,12 @@ def main():
     try:
         config = load_config("config.yaml")
         run_sync(
-            Path(config["csv_path"]),
-            Path(config["vault_path"]),
-            config["books_dir"]
+            Path(config["csv_path"]), Path(config["vault_path"]), config["books_dir"]
         )
     except Exception as e:
-        print{f"エラーが発生しました: {e}"}
+        print(f"エラーが発生しました: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
