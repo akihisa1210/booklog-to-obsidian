@@ -1,0 +1,19 @@
+[project]
+name = "booklog-to-obsidian"
+version = "0.1.0"
+description = "ブクログのCSVデータをObsidianに同期するツール"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pyyaml>=6.0.3",
+    "watchdog>=6.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["tests"]
