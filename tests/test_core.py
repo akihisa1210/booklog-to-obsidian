@@ -4,6 +4,7 @@ def test_convert_row_to_properties():
     row = {
         "title": "テストタイトル",
         "author": "テスト作者名",
+        "isbn13": "9784000000001",
         "publisher": "テスト出版社",
         "publish_year": "2020",
         "status": "読み終わった",
@@ -14,6 +15,7 @@ def test_convert_row_to_properties():
 
     assert props["title"] == "テストタイトル"
     assert props["authors"] == ["テスト作者名"]
+    assert props["isbn13"] == "9784000000001"
     assert props["publisher"] == "テスト出版社"
     assert props["publish_year"] == "2020"
     assert props["status"] == "読み終わった"
@@ -26,6 +28,7 @@ def test_convert_row_to_properties_without_rating():
     row = {
         "title": "テストタイトル",
         "author": "テスト作者名",
+        "isbn13": "9784000000001",
         "publisher": "テスト出版社",
         "publish_year": "2020",
         "status": "読み終わった",
@@ -36,6 +39,7 @@ def test_convert_row_to_properties_without_rating():
 
     assert props["title"] == "テストタイトル"
     assert props["authors"] == ["テスト作者名"]
+    assert props["isbn13"] == "9784000000001"
     assert props["publisher"] == "テスト出版社"
     assert props["publish_year"] == "2020"
     assert props["status"] == "読み終わった"
@@ -50,6 +54,7 @@ def test_save_book_to_markdown(tmp_path):
     props = {
         "title": "テストタイトル",
         "authors": ["テスト作者名"],
+        "isbn13": "9784000000001",
         "publisher": "テスト出版社",
         "publish_year": "2020",
         "status": "読み終わった",
@@ -71,6 +76,7 @@ def test_save_book_to_markdown(tmp_path):
 title: テストタイトル
 authors:
 - テスト作者名
+isbn13: '9784000000001'
 publisher: テスト出版社
 publish_year: '2020'
 status: 読み終わった
@@ -83,6 +89,47 @@ rating: 5
     actual_content = expected_file.read_text(encoding="utf-8")
 
     assert actual_content == expected_content
+
+
+def test_save_book_merge_existing_file(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    vault_path = tmp_path / "Vault"
+    books_dir = "Books"
+    (vault_path / books_dir).mkdir(parents=True)
+
+    existing_file = vault_path / books_dir / "Existing_Book.md"
+    existing_file.write_text(
+        "---\ntitle: 旧タイトル\nauthors:\n- 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
+        encoding="utf-8",
+    )
+
+    new_props = {
+        "title": "新タイトル",
+        "authors": ["著者B"],
+        "isbn13": "9784000000001",
+        "publisher": "テスト出版社",
+        "publish_year": "2020",
+        "status": "読み終わった",
+        "rating": 5,
+    }
+
+    save_book_to_markdown(
+        str(vault_path), books_dir, new_props, existing_file=existing_file
+    )
+
+    content = existing_file.read_text(encoding="utf-8")
+
+    assert "title: 新タイトル" in content
+    assert "authors:\n- 著者B" in content
+    assert "isbn13: '9784000000001'" in content
+    assert "publisher: テスト出版社" in content
+    assert "publish_year: '2020'" in content
+    assert "status: 読み終わった" in content
+    assert "rating: 5" in content
+
+    assert "## メモ" in content
+    assert "面白かった" in content
 
 
 def test_sanitize_filename():
@@ -115,3 +162,24 @@ def test_generate_filename_long():
         title
         == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa『a』（a、2020.md"
     )
+
+
+def test_build_isbn_index(tmp_path):
+    books_dir = tmp_path / "Books"
+    books_dir.mkdir()
+
+    # ISBNを持つファイル
+    file1 = books_dir / "Book1.md"
+    file1.write_text("---\nisbn13: 9784000000001\n---", encoding="utf-8")
+
+    # ISBNを持たないファイル
+    file2 = books_dir / "Note.md"
+    file2.write_text("# メモ\nISBNなし", encoding="utf-8")
+
+    from booklog_sync.core import build_isbn13_index
+
+    index = build_isbn13_index(books_dir)
+
+    assert index["9784000000001"] == file1
+    assert "9784000000001" in index
+    assert len(index) == 1

@@ -38,6 +38,7 @@ def convert_row_to_properties(row: dict[str, str]) -> dict[str, any]:
     return {
         "title": row.get("title"),
         "authors": [row.get("author")],
+        "isbn13": row.get("isbn13"),
         "publisher": row.get("publisher"),
         "publish_year": row.get("publish_year"),
         "status": row.get("status"),
@@ -86,13 +87,49 @@ def generate_filename(
     return sanitized
 
 
+def build_isbn13_index(books_dir: Path) -> dict[str, Path]:
+    """
+    ディレクトリ内の全ファイルを走査し、{13桁ISBN: Path} の辞書を返す
+    """
+    index = {}
+    if not books_dir.exists():
+        return index
+
+    for file_path in books_dir.glob("*.md"):
+        content = file_path.read_text(encoding="utf-8")
+        match = re.search(r'^isbn13:\s*["\']?(\d+)["\']?', content, re.MULTILINE)
+        if match:
+            isbn13 = match.group(1)
+            index[isbn13] = file_path
+
+    return index
+
+
 def save_book_to_markdown(
-    vault_path: str, books_dir: str, properties: dict, body: str = ""
+    vault_path: str,
+    books_dir: str,
+    properties: dict,
+    body: str = "",
+    existing_file: Path = None,
 ):
     """
     書籍データをMarkdownファイルとして保存する
     """
+
+    if existing_file and existing_file.exists():
+        old_content = existing_file.read_text(encoding="utf-8")
+        parts = old_content.split("---", 2)
+
+        if len(parts) >= 3:
+            old_props = yaml.safe_load(parts[1]) or {}
+            old_props.update(properties)
+            content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---\n{parts[2]}"
+            existing_file.write_text(content, encoding="utf-8")
+            print(f"Updated: {existing_file}")
+            return
+
     base_path = Path(vault_path) / books_dir
+    # TODO ディレクトリ作成は初回の1回だけで十分
     base_path.mkdir(parents=True, exist_ok=True)
 
     filename = generate_filename(
@@ -109,3 +146,4 @@ def save_book_to_markdown(
     file_path.write_text(content, encoding="utf-8")
 
     print(f"Saved: {file_path}")
+    return
