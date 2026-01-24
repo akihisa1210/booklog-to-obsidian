@@ -45,7 +45,7 @@ def test_run_sync_existing_file(tmp_path):
     content = existing_file.read_text(encoding="utf-8")
 
     assert "title: タイトル" in content
-    assert "authors:\n- 著者A" in content
+    assert "author: 著者A" in content
     assert "isbn13: '9784000000001'" in content
     assert "publisher: テスト出版社" in content
     assert "publish_year: '2020'" in content

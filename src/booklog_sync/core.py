@@ -29,7 +29,7 @@ BOOKLOG_CSV_COLUMNS: Final = list(get_type_hints(BooklogCSVRow).keys())
 
 class Book(TypedDict):
     title: str
-    authors: list[str]
+    author: Optional[str]
     isbn13: Optional[str]
     publisher: Optional[str]
     publish_year: Optional[str]
@@ -50,7 +50,7 @@ def convert_csv(row: BooklogCSVRow) -> Book:
 
     return {
         "title": row.get("title"),
-        "authors": [row.get("author")],
+        "author": row.get("author"),
         "isbn13": row.get("isbn13"),
         "publisher": row.get("publisher"),
         "publish_year": row.get("publish_year"),
@@ -146,7 +146,7 @@ def save_book_to_markdown(
     base_path.mkdir(parents=True, exist_ok=True)
 
     filename = generate_filename(
-        book["authors"][0],
+        book["author"],
         book["title"],
         book["publisher"],
         book["publish_year"],

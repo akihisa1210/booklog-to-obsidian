@@ -24,7 +24,7 @@ def create_book(props: dict[str, str] | None = None) -> Book:
 
     default_book: Book = {
         "title": "テストタイトル",
-        "authors": ["テスト作者名"],
+        "author": "テスト作者名",
         "isbn13": "9784000000001",
         "publisher": "テスト出版社",
         "publish_year": "2020",
@@ -43,7 +43,7 @@ def test_convert_row_to_properties():
     book = convert_csv(row)
 
     assert book["title"] == "テストタイトル"
-    assert book["authors"] == ["テスト作者名"]
+    assert book["author"] == "テスト作者名"
     assert book["isbn13"] == "9784000000001"
     assert book["publisher"] == "テスト出版社"
     assert book["publish_year"] == "2020"
@@ -59,7 +59,7 @@ def test_convert_row_to_properties_without_rating():
     book = convert_csv(row)
 
     assert book["title"] == "テストタイトル"
-    assert book["authors"] == ["テスト作者名"]
+    assert book["author"] == "テスト作者名"
     assert book["isbn13"] == "9784000000001"
     assert book["publisher"] == "テスト出版社"
     assert book["publish_year"] == "2020"
@@ -87,8 +87,7 @@ def test_save_book_to_markdown(tmp_path):
 
     expected_content = """---
 title: テストタイトル
-authors:
-- テスト作者名
+author: テスト作者名
 isbn13: '9784000000001'
 publisher: テスト出版社
 publish_year: '2020'
@@ -113,14 +112,14 @@ def test_save_book_merge_existing_file(tmp_path):
 
     existing_file = vault_path / books_dir / "Existing_Book.md"
     existing_file.write_text(
-        "---\ntitle: 旧タイトル\nauthors:\n- 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
+        "---\ntitle: 旧タイトル\nauthors: 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
         encoding="utf-8",
     )
 
     updated_book_data = create_book(
         {
             "title": "新タイトル",
-            "authors": ["著者B"],
+            "author": "著者B",
             "status": "読み終わった",
             "rating": 5,
         }
@@ -133,7 +132,7 @@ def test_save_book_merge_existing_file(tmp_path):
     content = existing_file.read_text(encoding="utf-8")
 
     assert "title: 新タイトル" in content
-    assert "authors:\n- 著者B" in content
+    assert "author: 著者B" in content
     assert "isbn13: '9784000000001'" in content
     assert "publisher: テスト出版社" in content
     assert "publish_year: '2020'" in content
