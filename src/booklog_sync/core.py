@@ -112,7 +112,9 @@ def build_id_book_index(books_dir: Path) -> dict[str, Path]:
 
     for file_path in books_dir.glob("*.md"):
         content = file_path.read_text(encoding="utf-8")
-        match = re.search(r'^item_id:\s*["\']?(\d+)["\']?', content, re.MULTILINE)
+        match = re.search(
+            r'^item_id:\s*["\']?([A-Za-z0-9]+)["\']?', content, re.MULTILINE
+        )
         if match:
             item_id = match.group(1)
             index[item_id] = file_path

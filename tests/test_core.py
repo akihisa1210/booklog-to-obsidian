@@ -200,3 +200,24 @@ def test_build_id_book_index(tmp_path):
     assert index["1000000000"] == file1
     assert "1000000000" in index
     assert len(index) == 1
+
+
+def test_build_id_book_index_when_item_id_is_not_a_number(tmp_path):
+    books_dir = tmp_path / "Books"
+    books_dir.mkdir()
+
+    # item_idを持つファイル
+    file1 = books_dir / "Book1.md"
+    file1.write_text("---\ntags:\nitem_id: B0D143YRBP\n---", encoding="utf-8")
+
+    # item_idを持たないファイル
+    file2 = books_dir / "Note.md"
+    file2.write_text("# メモ\nitem_idなし", encoding="utf-8")
+
+    from booklog_sync.core import build_id_book_index
+
+    index = build_id_book_index(books_dir)
+
+    assert index["B0D143YRBP"] == file1
+    assert "B0D143YRBP" in index
+    assert len(index) == 1
