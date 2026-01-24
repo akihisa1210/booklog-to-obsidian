@@ -28,6 +28,7 @@ BOOKLOG_CSV_COLUMNS: Final = list(get_type_hints(BooklogCSVRow).keys())
 
 
 class Book(TypedDict):
+    item_id: str
     title: str
     author: Optional[str]
     isbn13: Optional[str]
@@ -49,6 +50,7 @@ def convert_csv(row: BooklogCSVRow) -> Book:
     rating = int(rating_str) if rating_str.isdigit() else None
 
     return {
+        "item_id": row.get("item_id"),
         "title": row.get("title"),
         "author": row.get("author"),
         "isbn13": row.get("isbn13"),

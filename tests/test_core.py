@@ -6,6 +6,7 @@ def create_booklog_csv_row(props: dict[str, str] | None = None) -> BooklogCSVRow
         props = {}
 
     default_csv_row: BooklogCSVRow = {
+        "item_id": "1000000000",
         "title": "テストタイトル",
         "author": "テスト作者名",
         "isbn13": "9784000000001",
@@ -23,6 +24,7 @@ def create_book(props: dict[str, str] | None = None) -> Book:
         props = {}
 
     default_book: Book = {
+        "item_id": "1000000000",
         "title": "テストタイトル",
         "author": "テスト作者名",
         "isbn13": "9784000000001",
@@ -42,6 +44,7 @@ def test_convert_row_to_properties():
 
     book = convert_csv(row)
 
+    assert book["item_id"] == "1000000000"
     assert book["title"] == "テストタイトル"
     assert book["author"] == "テスト作者名"
     assert book["isbn13"] == "9784000000001"
@@ -58,6 +61,7 @@ def test_convert_row_to_properties_without_rating():
 
     book = convert_csv(row)
 
+    assert book["item_id"] == "1000000000"
     assert book["title"] == "テストタイトル"
     assert book["author"] == "テスト作者名"
     assert book["isbn13"] == "9784000000001"
@@ -86,6 +90,7 @@ def test_save_book_to_markdown(tmp_path):
     assert expected_file.exists()
 
     expected_content = """---
+item_id: '1000000000'
 title: テストタイトル
 author: テスト作者名
 isbn13: '9784000000001'
@@ -112,7 +117,7 @@ def test_save_book_merge_existing_file(tmp_path):
 
     existing_file = vault_path / books_dir / "Existing_Book.md"
     existing_file.write_text(
-        "---\ntitle: 旧タイトル\nauthors: 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
+        "---\nitem_id: '1000000000'\ntitle: 旧タイトル\nauthors: 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
         encoding="utf-8",
     )
 
@@ -131,6 +136,7 @@ def test_save_book_merge_existing_file(tmp_path):
 
     content = existing_file.read_text(encoding="utf-8")
 
+    assert "item_id: '1000000000'" in content
     assert "title: 新タイトル" in content
     assert "author: 著者B" in content
     assert "isbn13: '9784000000001'" in content
