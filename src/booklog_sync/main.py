@@ -1,6 +1,7 @@
 from pathlib import Path
 import csv
 import sys
+import pprint
 
 from booklog_sync.config import load_config
 from booklog_sync.core import (
@@ -17,6 +18,7 @@ def run_sync(csv_path: Path, vault_path: Path, books_dir: str):
     CSVファイルのパスを受け取り、ファイルを作成または更新する。
     """
     id_book_index = build_id_book_index(Path(vault_path) / books_dir)
+    pprint.pprint(id_book_index)
 
     with open(csv_path, "r", encoding="cp932") as f:
         # TODO reader、rowに型を付ける
