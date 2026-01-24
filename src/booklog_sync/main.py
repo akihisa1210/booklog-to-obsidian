@@ -8,15 +8,15 @@ from booklog_sync.core import (
     Book,
     convert_csv,
     save_book_to_markdown,
-    build_isbn13_index,
+    build_id_book_index,
 )
 
 
 def run_sync(csv_path: Path, vault_path: Path, books_dir: str):
     """
-    CSVファイルのパスを受け取り、各行のデータをマークダウンに変換する。
+    CSVファイルのパスを受け取り、ファイルを作成または更新する。
     """
-    isbn13_index = build_isbn13_index(Path(vault_path) / books_dir)
+    id_book_index = build_id_book_index(Path(vault_path) / books_dir)
 
     with open(csv_path, "r", encoding="cp932") as f:
         # TODO reader、rowに型を付ける
@@ -24,8 +24,8 @@ def run_sync(csv_path: Path, vault_path: Path, books_dir: str):
         for row in reader:
             book: Book = convert_csv(row)
 
-            isbn13 = row.get("isbn13")
-            existing_file = isbn13_index.get(isbn13)
+            item_id = row.get("item_id")
+            existing_file = id_book_index.get(item_id)
 
             if existing_file:
                 save_book_to_markdown(

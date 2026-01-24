@@ -1,7 +1,7 @@
 def test_run_sync(tmp_path):
     csv_file = tmp_path / "test.csv"
     csv_file.write_text(
-        "...,...,9784000000001,...,5,読み終わった,...,...,...,...,...,テストタイトル,テスト作者名,テスト出版社,2020,...",
+        "...,1000000000,9784000000001,...,5,読み終わった,...,...,...,...,...,テストタイトル,テスト作者名,テスト出版社,2020,...",
         encoding="cp932",
     )
 
@@ -22,7 +22,7 @@ def test_run_sync(tmp_path):
 def test_run_sync_existing_file(tmp_path):
     csv_file = tmp_path / "test.csv"
     csv_file.write_text(
-        "...,...,9784000000001,...,5,読み終わった,...,...,...,...,...,タイトル,著者A,テスト出版社,2020,...",
+        "...,1000000000,9784000000001,...,5,読み終わった,...,...,...,...,...,タイトル,著者A,テスト出版社,2020,...",
         encoding="cp932",
     )
 
@@ -32,7 +32,7 @@ def test_run_sync_existing_file(tmp_path):
 
     existing_file = vault_path / books_dir / "Existing_Book.md"
     existing_file.write_text(
-        "---\nitem_id: '1000000000'\ntitle: タイトル\nauthors:\n- 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
+        "---\nitem_id: '1000000000'\ntitle: タイトル\nauthor: 著者A\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
         encoding="utf-8",
     )
 

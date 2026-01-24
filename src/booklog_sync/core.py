@@ -102,9 +102,9 @@ def generate_filename(
     return sanitized
 
 
-def build_isbn13_index(books_dir: Path) -> dict[str, Path]:
+def build_id_book_index(books_dir: Path) -> dict[str, Path]:
     """
-    ディレクトリ内の全ファイルを走査し、{13桁ISBN: Path} の辞書を返す
+    ディレクトリ内の全ファイルを走査し、item_idがあるファイルとそのファイルパスをもつ辞書を返す。
     """
     index = {}
     if not books_dir.exists():
@@ -112,10 +112,10 @@ def build_isbn13_index(books_dir: Path) -> dict[str, Path]:
 
     for file_path in books_dir.glob("*.md"):
         content = file_path.read_text(encoding="utf-8")
-        match = re.search(r'^isbn13:\s*["\']?(\d+)["\']?', content, re.MULTILINE)
+        match = re.search(r'^item_id:\s*["\']?(\d+)["\']?', content, re.MULTILINE)
         if match:
-            isbn13 = match.group(1)
-            index[isbn13] = file_path
+            item_id = match.group(1)
+            index[item_id] = file_path
 
     return index
 

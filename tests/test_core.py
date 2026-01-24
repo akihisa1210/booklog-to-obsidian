@@ -181,22 +181,22 @@ def test_generate_filename_long():
     )
 
 
-def test_build_isbn_index(tmp_path):
+def test_build_id_book_index(tmp_path):
     books_dir = tmp_path / "Books"
     books_dir.mkdir()
 
-    # ISBNを持つファイル
+    # item_idを持つファイル
     file1 = books_dir / "Book1.md"
-    file1.write_text("---\nisbn13: 9784000000001\n---", encoding="utf-8")
+    file1.write_text("---\nitem_id: 1000000000\n---", encoding="utf-8")
 
-    # ISBNを持たないファイル
+    # item_idを持たないファイル
     file2 = books_dir / "Note.md"
-    file2.write_text("# メモ\nISBNなし", encoding="utf-8")
+    file2.write_text("# メモ\nitem_idなし", encoding="utf-8")
 
-    from booklog_sync.core import build_isbn13_index
+    from booklog_sync.core import build_id_book_index
 
-    index = build_isbn13_index(books_dir)
+    index = build_id_book_index(books_dir)
 
-    assert index["9784000000001"] == file1
-    assert "9784000000001" in index
+    assert index["1000000000"] == file1
+    assert "1000000000" in index
     assert len(index) == 1
