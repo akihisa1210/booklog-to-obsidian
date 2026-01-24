@@ -1,39 +1,52 @@
 from pathlib import Path
 import yaml
 import re
+from typing import Final, TypedDict, Optional, get_type_hints
 
-BOOKLOG_CSV_COLUMNS = [
-    "service_id",
-    "item_id",
-    "isbn13",
-    "category",
-    "rating",
-    "status",
-    "review",
-    "tags",
-    "memo",
-    "registered_at",
-    "finished_at",
-    "title",
-    "author",
-    "publisher",
-    "publish_year",
-    "type",
-    "page_count",
-]
+
+class BooklogCSVRow(TypedDict, total=False):
+    service_id: str
+    item_id: str
+    isbn13: str
+    category: str
+    rating: str
+    status: str
+    review: str
+    tags: str
+    memo: str
+    registered_at: str
+    finished_at: str
+    title: str
+    author: str
+    publisher: str
+    publish_year: str
+    book_type: str
+    page_count: str
+
+
+BOOKLOG_CSV_COLUMNS: Final = list(get_type_hints(BooklogCSVRow).keys())
+
+
+class Book(TypedDict):
+    title: str
+    authors: list[str]
+    isbn13: Optional[str]
+    publisher: Optional[str]
+    publish_year: Optional[str]
+    status: Optional[str]
+    rating: Optional[int]
+
 
 # ファイル名の最大バイト数。OS上の上限は255バイトだが、何かの操作でファイル名にプレフィックスがつく場合などを考慮して200バイトとする。UTF-8。
-FILENAME_MAX_BYTE_LENGTH = 200
+FILENAME_MAX_BYTE_LENGTH: Final = 200
 
 
-def convert_row_to_properties(row: dict[str, str]) -> dict[str, any]:
+def convert_csv(row: BooklogCSVRow) -> Book:
     """
-    ブクログのCSVの1行をObsidianのフロントマター用辞書に変換する
+    ブクログのCSVの1行をObsidianのフロントマター用書籍データに変換する
     """
     rating_str: str = row.get("rating", "")
     rating = int(rating_str) if rating_str.isdigit() else None
-
-    # TODO CSV上に値が存在しないときの処理
 
     return {
         "title": row.get("title"),
@@ -108,7 +121,7 @@ def build_isbn13_index(books_dir: Path) -> dict[str, Path]:
 def save_book_to_markdown(
     vault_path: str,
     books_dir: str,
-    properties: dict,
+    book: Book,
     body: str = "",
     existing_file: Path = None,
 ):
@@ -122,7 +135,7 @@ def save_book_to_markdown(
 
         if len(parts) >= 3:
             old_props = yaml.safe_load(parts[1]) or {}
-            old_props.update(properties)
+            old_props.update(book)
             content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---\n{parts[2]}"
             existing_file.write_text(content, encoding="utf-8")
             print(f"Updated: {existing_file}")
@@ -133,14 +146,14 @@ def save_book_to_markdown(
     base_path.mkdir(parents=True, exist_ok=True)
 
     filename = generate_filename(
-        properties["authors"][0],
-        properties["title"],
-        properties["publisher"],
-        properties["publish_year"],
+        book["authors"][0],
+        book["title"],
+        book["publisher"],
+        book["publish_year"],
     )
     file_path = base_path / _sanitize_filename(filename)
 
-    frontmatter = yaml.dump(properties, allow_unicode=True, sort_keys=False)
+    frontmatter = yaml.dump(book, allow_unicode=True, sort_keys=False)
 
     content = f"---\n{frontmatter}---\n{body}\n"
     file_path.write_text(content, encoding="utf-8")

@@ -1,7 +1,11 @@
-def test_convert_row_to_properties():
-    from booklog_sync.core import convert_row_to_properties
+from booklog_sync.core import Book, BooklogCSVRow
 
-    row = {
+
+def create_booklog_csv_row(props: dict[str, str] | None = None) -> BooklogCSVRow:
+    if props is None:
+        props = {}
+
+    default_csv_row: BooklogCSVRow = {
         "title": "テストタイトル",
         "author": "テスト作者名",
         "isbn13": "9784000000001",
@@ -11,47 +15,14 @@ def test_convert_row_to_properties():
         "rating": "5",
     }
 
-    props = convert_row_to_properties(row)
-
-    assert props["title"] == "テストタイトル"
-    assert props["authors"] == ["テスト作者名"]
-    assert props["isbn13"] == "9784000000001"
-    assert props["publisher"] == "テスト出版社"
-    assert props["publish_year"] == "2020"
-    assert props["status"] == "読み終わった"
-    assert props["rating"] == 5
+    return {**default_csv_row, **props}
 
 
-def test_convert_row_to_properties_without_rating():
-    from booklog_sync.core import convert_row_to_properties
+def create_book(props: dict[str, str] | None = None) -> Book:
+    if props is None:
+        props = {}
 
-    row = {
-        "title": "テストタイトル",
-        "author": "テスト作者名",
-        "isbn13": "9784000000001",
-        "publisher": "テスト出版社",
-        "publish_year": "2020",
-        "status": "読み終わった",
-        "rating": "",
-    }
-
-    props = convert_row_to_properties(row)
-
-    assert props["title"] == "テストタイトル"
-    assert props["authors"] == ["テスト作者名"]
-    assert props["isbn13"] == "9784000000001"
-    assert props["publisher"] == "テスト出版社"
-    assert props["publish_year"] == "2020"
-    assert props["status"] == "読み終わった"
-    assert props["rating"] is None
-
-
-def test_save_book_to_markdown(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
-    vault_path = tmp_path / "MyVault"
-    books_dir = "Books"
-    props = {
+    default_book: Book = {
         "title": "テストタイトル",
         "authors": ["テスト作者名"],
         "isbn13": "9784000000001",
@@ -60,9 +31,51 @@ def test_save_book_to_markdown(tmp_path):
         "status": "読み終わった",
         "rating": 5,
     }
+
+    return {**default_book, **props}
+
+
+def test_convert_row_to_properties():
+    row = create_booklog_csv_row()
+
+    from booklog_sync.core import convert_csv
+
+    book = convert_csv(row)
+
+    assert book["title"] == "テストタイトル"
+    assert book["authors"] == ["テスト作者名"]
+    assert book["isbn13"] == "9784000000001"
+    assert book["publisher"] == "テスト出版社"
+    assert book["publish_year"] == "2020"
+    assert book["status"] == "読み終わった"
+    assert book["rating"] == 5
+
+
+def test_convert_row_to_properties_without_rating():
+    row = create_booklog_csv_row({"rating": ""})
+
+    from booklog_sync.core import convert_csv
+
+    book = convert_csv(row)
+
+    assert book["title"] == "テストタイトル"
+    assert book["authors"] == ["テスト作者名"]
+    assert book["isbn13"] == "9784000000001"
+    assert book["publisher"] == "テスト出版社"
+    assert book["publish_year"] == "2020"
+    assert book["status"] == "読み終わった"
+    assert book["rating"] is None
+
+
+def test_save_book_to_markdown(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    vault_path = tmp_path / "MyVault"
+    books_dir = "Books"
+    book = create_book()
     body = "# 感想\n面白かった"
 
-    save_book_to_markdown(str(vault_path), books_dir, props, body)
+    save_book_to_markdown(str(vault_path), books_dir, book, body)
 
     expected_file = (
         vault_path
@@ -104,18 +117,17 @@ def test_save_book_merge_existing_file(tmp_path):
         encoding="utf-8",
     )
 
-    new_props = {
-        "title": "新タイトル",
-        "authors": ["著者B"],
-        "isbn13": "9784000000001",
-        "publisher": "テスト出版社",
-        "publish_year": "2020",
-        "status": "読み終わった",
-        "rating": 5,
-    }
+    updated_book_data = create_book(
+        {
+            "title": "新タイトル",
+            "authors": ["著者B"],
+            "status": "読み終わった",
+            "rating": 5,
+        }
+    )
 
     save_book_to_markdown(
-        str(vault_path), books_dir, new_props, existing_file=existing_file
+        str(vault_path), books_dir, updated_book_data, existing_file=existing_file
     )
 
     content = existing_file.read_text(encoding="utf-8")
