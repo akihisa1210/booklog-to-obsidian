@@ -41,16 +41,21 @@ def run_sync(csv_path: Path, books_path: Path):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="ブクログCSVをObsidianに同期するツール")
-    parser.add_argument(
+    config_parser = argparse.ArgumentParser(add_help=False)
+    config_parser.add_argument(
         "--config", default="config.yaml", help="設定ファイルのパス (デフォルト: config.yaml)"
+    )
+
+    parser = argparse.ArgumentParser(
+        description="ブクログCSVをObsidianに同期するツール",
+        parents=[config_parser],
     )
 
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("sync", help="CSVファイルを読み込み同期を実行する")
+    subparsers.add_parser("sync", parents=[config_parser], help="CSVファイルを読み込み同期を実行する")
 
-    subparsers.add_parser("watch", help="CSVファイルを監視し、変更時に自動同期する")
+    subparsers.add_parser("watch", parents=[config_parser], help="CSVファイルを監視し、変更時に自動同期する")
 
     args = parser.parse_args()
 
