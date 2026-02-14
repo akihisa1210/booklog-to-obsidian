@@ -1,7 +1,7 @@
 from pathlib import Path
 import csv
+import logging
 import sys
-import pprint
 
 from booklog_sync.config import load_config
 from booklog_sync.core import (
@@ -12,16 +12,17 @@ from booklog_sync.core import (
     build_id_book_index,
 )
 
+logger = logging.getLogger(__name__)
 
-def run_sync(csv_path: Path, vault_path: Path, books_dir: str):
+
+def run_sync(csv_path: Path, books_path: Path):
     """
     CSVファイルのパスを受け取り、ファイルを作成または更新する。
     """
-    id_book_index = build_id_book_index(Path(vault_path) / books_dir)
-    pprint.pprint(id_book_index)
+    id_book_index = build_id_book_index(books_path)
+    logger.debug("id_book_index: %s", id_book_index)
 
     with open(csv_path, "r", encoding="cp932") as f:
-        # TODO reader、rowに型を付ける
         reader = csv.DictReader(f, fieldnames=BOOKLOG_CSV_COLUMNS)
         for row in reader:
             book: Book = convert_csv(row)
@@ -31,18 +32,45 @@ def run_sync(csv_path: Path, vault_path: Path, books_dir: str):
 
             if existing_file:
                 save_book_to_markdown(
-                    str(vault_path), books_dir, book, existing_file=existing_file
+                    books_path, book, existing_file=existing_file
                 )
             else:
-                save_book_to_markdown(str(vault_path), books_dir, book)
+                save_book_to_markdown(books_path, book)
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="ブクログCSVをObsidianに同期するツール")
+    parser.add_argument(
+        "--config", default="config.yaml", help="設定ファイルのパス (デフォルト: config.yaml)"
+    )
+
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("sync", help="CSVファイルを読み込み同期を実行する")
+
+    subparsers.add_parser("watch", help="CSVファイルを監視し、変更時に自動同期する")
+
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+    )
+
     try:
-        config = load_config("config.yaml")
-        run_sync(
-            Path(config["csv_path"]), Path(config["vault_path"]), config["books_dir"]
-        )
+        config = load_config(args.config)
+
+        if args.command == "watch":
+            from booklog_sync.watcher import start_watching
+
+            # 初回同期
+            run_sync(config.csv_path, config.books_path)
+            start_watching(config.csv_path, config.books_path)
+        else:
+            # デフォルト: sync
+            run_sync(config.csv_path, config.books_path)
     except Exception as e:
         print(f"エラーが発生しました: {e}")
         sys.exit(1)

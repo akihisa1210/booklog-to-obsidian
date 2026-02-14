@@ -74,16 +74,14 @@ def test_convert_row_to_properties_without_rating():
 def test_save_book_to_markdown(tmp_path):
     from booklog_sync.core import save_book_to_markdown
 
-    vault_path = tmp_path / "MyVault"
-    books_dir = "Books"
+    books_path = tmp_path / "MyVault" / "Books"
     book = create_book()
     body = "# 感想\n面白かった"
 
-    save_book_to_markdown(str(vault_path), books_dir, book, body)
+    save_book_to_markdown(books_path, book, body)
 
     expected_file = (
-        vault_path
-        / books_dir
+        books_path
         / "テスト作者名『テストタイトル』（テスト出版社、2020）.md"
     )
 
@@ -111,11 +109,10 @@ rating: 5
 def test_save_book_merge_existing_file(tmp_path):
     from booklog_sync.core import save_book_to_markdown
 
-    vault_path = tmp_path / "Vault"
-    books_dir = "Books"
-    (vault_path / books_dir).mkdir(parents=True)
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
 
-    existing_file = vault_path / books_dir / "Existing_Book.md"
+    existing_file = books_path / "Existing_Book.md"
     existing_file.write_text(
         "---\nitem_id: '1000000000'\ntitle: 旧タイトル\nauthors: 著者A\nisbn13: 9784000000001\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
         encoding="utf-8",
@@ -131,7 +128,7 @@ def test_save_book_merge_existing_file(tmp_path):
     )
 
     save_book_to_markdown(
-        str(vault_path), books_dir, updated_book_data, existing_file=existing_file
+        books_path, updated_book_data, existing_file=existing_file
     )
 
     content = existing_file.read_text(encoding="utf-8")

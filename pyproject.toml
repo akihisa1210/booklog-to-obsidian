@@ -18,6 +18,9 @@ where = ["src"]
 include = ["*"]
 exclude = ["tests*"]
 
+[project.scripts]
+booklog-sync = "booklog_sync.main:main"
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",

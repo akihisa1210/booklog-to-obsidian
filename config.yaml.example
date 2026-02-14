@@ -1,3 +1,2 @@
 csv_path: 'C:/path/to/your/booklog.csv'
-vault_path: 'C:/path/to/your/ObsidianVault'
-books_dir: 'Books'
+books_path: 'C:/path/to/your/ObsidianVault/Books'

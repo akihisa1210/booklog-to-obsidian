@@ -28,14 +28,47 @@ uv sync
 2. 自分の環境に合わせてパスを書き換えます。
 ```yaml
 csv_path: 'C:/path/to/your/booklog.csv' # ブクログからダウンロードしたCSVのパス
-vault_path: 'C:/path/to/your/ObsidianVault' # ObsidianのVaultのパス
-books_dir: 'Books' # ObsidianのVault内にある、書籍ファイルを配置するフォルダのパス
+books_path: 'C:/path/to/your/ObsidianVault/Books' # 書籍ファイルを配置するフォルダの絶対パス
 ```
 
 ### 5. ツールの実行
-1. ツールを実行します。
+
+#### 手動同期（1回だけ実行）
 ```sh
-uv run scr/booklog_sync/main.py
+uv run booklog-sync sync --config config.yaml
+```
+
+#### ファイル監視モード（CSVの変更を自動検知して同期）
+```sh
+uv run booklog-sync watch --config config.yaml
+```
+`--config` を省略するとカレントディレクトリの `config.yaml` が使われます。
+
+## `uv tool install` によるシステムインストール
+
+`uv tool install` を使うと、プロジェクトディレクトリの外から `booklog-sync` コマンドを直接実行できるようになります。
+
+```sh
+uv tool install git+https://github.com/akihisa1210/booklog-to-obsidian.git
+```
+
+インストール後は以下のように実行できます。
+```sh
+booklog-sync sync --config /path/to/config.yaml
+booklog-sync watch --config /path/to/config.yaml
+```
+
+更新する場合:
+```sh
+uv tool upgrade booklog-to-obsidian
+```
+
+### Windows タスクスケジューラでの自動起動
+
+ログオン時に自動でファイル監視を開始するには、タスクスケジューラに登録します。
+
+```powershell
+schtasks /create /tn "BooklogSync" /tr "booklog-sync watch --config C:\path\to\config.yaml" /sc onlogon /rl limited
 ```
 
 ## 仕様
@@ -69,7 +102,7 @@ rating: <ブクログ上の評価>
 
 ### ファイルの更新
 
-CSVのアイテムID（2列目）と`books_dir`内のファイルの`item_id`の値が一致する場合、そのファイルのフロントマターをCSVの情報で更新します。
+CSVのアイテムID（2列目）と`books_path`内のファイルの`item_id`の値が一致する場合、そのファイルのフロントマターをCSVの情報で更新します。
 
 
 ## 開発者向け
@@ -77,4 +110,10 @@ CSVのアイテムID（2列目）と`books_dir`内のファイルの`item_id`の
 ### テスト実行
 ```sh
 uv run pytest
+```
+
+### `python -m` での実行
+```sh
+uv run python -m booklog_sync sync
+uv run python -m booklog_sync watch --config config.yaml
 ```
