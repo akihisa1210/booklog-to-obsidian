@@ -157,11 +157,15 @@ def save_book_to_markdown(
         parts = old_content.split("---", 2)
 
         if len(parts) >= 3:
-            old_props = yaml.safe_load(parts[1]) or {}
+            try:
+                old_props = yaml.safe_load(parts[1]) or {}
+            except yaml.YAMLError:
+                logger.warning("Failed to parse frontmatter, overwriting: %s", existing_file)
+                old_props = {}
             changes = diff_frontmatter(old_props, book)
 
             if not changes:
-                logger.info("Unchanged: %s", existing_file)
+                logger.debug("Unchanged: %s", existing_file)
                 return "unchanged"
 
             for key, (old_val, new_val) in changes.items():

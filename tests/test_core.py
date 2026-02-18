@@ -377,6 +377,28 @@ def test_save_book_unchanged_preserves_body(tmp_path):
     assert "面白かった" in content
 
 
+def test_save_book_yaml_parse_error_overwrites(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
+
+    book = create_book()
+    existing_file = books_path / "Broken.md"
+    existing_file.write_text(
+        "---\nitem_id: '1000000000'\ntitle: [invalid yaml\n---\n## メモ\n",
+        encoding="utf-8",
+    )
+
+    result = save_book_to_markdown(books_path, book, existing_file=existing_file)
+
+    assert result == "updated"
+
+    content = existing_file.read_text(encoding="utf-8")
+    assert "title: テストタイトル" in content
+    assert "## メモ" in content
+
+
 def test_build_id_book_index_when_item_id_is_not_a_number(tmp_path):
     books_dir = tmp_path / "Books"
     books_dir.mkdir()
