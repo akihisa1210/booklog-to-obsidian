@@ -57,3 +57,22 @@ def test_run_sync_existing_file(tmp_path):
 
     created_files = list(books_path.glob("*.md"))
     assert len(created_files) == 1
+
+
+def test_run_sync_logs_summary(tmp_path, caplog):
+    import logging
+
+    csv_file = tmp_path / "test.csv"
+    csv_file.write_text(
+        "...,1000000000,9784000000001,...,5,読み終わった,...,...,...,...,...,テストタイトル,テスト作者名,テスト出版社,2020,...",
+        encoding="cp932",
+    )
+
+    books_path = tmp_path / "Vault" / "Books"
+
+    from booklog_sync.main import run_sync
+
+    with caplog.at_level(logging.INFO, logger="booklog_sync.main"):
+        run_sync(csv_file, books_path)
+
+    assert "Sync completed: 1 created, 0 updated, 0 unchanged" in caplog.text

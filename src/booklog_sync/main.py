@@ -22,6 +22,10 @@ def run_sync(csv_path: Path, books_path: Path):
     id_book_index = build_id_book_index(books_path)
     logger.debug("id_book_index: %s", id_book_index)
 
+    created = 0
+    updated = 0
+    unchanged = 0
+
     with open(csv_path, "r", encoding="cp932") as f:
         reader = csv.DictReader(f, fieldnames=BOOKLOG_CSV_COLUMNS)
         for row in reader:
@@ -31,11 +35,20 @@ def run_sync(csv_path: Path, books_path: Path):
             existing_file = id_book_index.get(item_id)
 
             if existing_file:
-                save_book_to_markdown(
+                result = save_book_to_markdown(
                     books_path, book, existing_file=existing_file
                 )
             else:
-                save_book_to_markdown(books_path, book)
+                result = save_book_to_markdown(books_path, book)
+
+            if result == "created":
+                created += 1
+            elif result == "updated":
+                updated += 1
+            elif result == "unchanged":
+                unchanged += 1
+
+    logger.info("Sync completed: %d created, %d updated, %d unchanged", created, updated, unchanged)
 
 
 def main():

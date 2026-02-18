@@ -199,6 +199,184 @@ def test_build_id_book_index(tmp_path):
     assert len(index) == 1
 
 
+def test_diff_frontmatter_no_changes():
+    from booklog_sync.core import diff_frontmatter
+
+    book = create_book()
+    existing_props = {
+        "item_id": "1000000000",
+        "title": "テストタイトル",
+        "author": "テスト作者名",
+        "isbn13": "9784000000001",
+        "publisher": "テスト出版社",
+        "publish_year": "2020",
+        "status": "読み終わった",
+        "rating": 5,
+    }
+
+    changes = diff_frontmatter(existing_props, book)
+
+    assert changes == {}
+
+
+def test_diff_frontmatter_with_changes():
+    from booklog_sync.core import diff_frontmatter
+
+    book = create_book({"rating": 3})
+    existing_props = {
+        "item_id": "1000000000",
+        "title": "テストタイトル",
+        "author": "テスト作者名",
+        "isbn13": "9784000000001",
+        "publisher": "テスト出版社",
+        "publish_year": "2020",
+        "status": "読み終わった",
+        "rating": 5,
+    }
+
+    changes = diff_frontmatter(existing_props, book)
+
+    assert changes == {"rating": (5, 3)}
+
+
+def test_diff_frontmatter_multiple_changes():
+    from booklog_sync.core import diff_frontmatter
+
+    book = create_book({"rating": 3, "status": "積読", "title": "新タイトル"})
+    existing_props = {
+        "item_id": "1000000000",
+        "title": "テストタイトル",
+        "author": "テスト作者名",
+        "isbn13": "9784000000001",
+        "publisher": "テスト出版社",
+        "publish_year": "2020",
+        "status": "読み終わった",
+        "rating": 5,
+    }
+
+    changes = diff_frontmatter(existing_props, book)
+
+    assert changes == {
+        "title": ("テストタイトル", "新タイトル"),
+        "status": ("読み終わった", "積読"),
+        "rating": (5, 3),
+    }
+
+
+def test_diff_frontmatter_rating_none_to_int():
+    from booklog_sync.core import diff_frontmatter
+
+    book = create_book({"rating": 5})
+    existing_props = {
+        "item_id": "1000000000",
+        "title": "テストタイトル",
+        "author": "テスト作者名",
+        "isbn13": "9784000000001",
+        "publisher": "テスト出版社",
+        "publish_year": "2020",
+        "status": "読み終わった",
+        "rating": None,
+    }
+
+    changes = diff_frontmatter(existing_props, book)
+
+    assert changes == {"rating": (None, 5)}
+
+
+def test_diff_frontmatter_rating_int_to_none():
+    from booklog_sync.core import diff_frontmatter
+
+    book = create_book({"rating": None})
+    existing_props = {
+        "item_id": "1000000000",
+        "title": "テストタイトル",
+        "author": "テスト作者名",
+        "isbn13": "9784000000001",
+        "publisher": "テスト出版社",
+        "publish_year": "2020",
+        "status": "読み終わった",
+        "rating": 5,
+    }
+
+    changes = diff_frontmatter(existing_props, book)
+
+    assert changes == {"rating": (5, None)}
+
+
+def test_save_book_unchanged_skips_write(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
+
+    book = create_book()
+    existing_file = books_path / "Existing_Book.md"
+    existing_file.write_text(
+        "---\nitem_id: '1000000000'\ntitle: テストタイトル\nauthor: テスト作者名\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 読み終わった\nrating: 5\n---\n## メモ\n面白かった",
+        encoding="utf-8",
+    )
+
+    mtime_before = existing_file.stat().st_mtime
+
+    result = save_book_to_markdown(books_path, book, existing_file=existing_file)
+
+    mtime_after = existing_file.stat().st_mtime
+
+    assert result == "unchanged"
+    assert mtime_before == mtime_after
+
+
+def test_save_book_updated_returns_updated(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
+
+    book = create_book({"rating": 3})
+    existing_file = books_path / "Existing_Book.md"
+    existing_file.write_text(
+        "---\nitem_id: '1000000000'\ntitle: テストタイトル\nauthor: テスト作者名\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 読み終わった\nrating: 5\n---\n## メモ\n面白かった",
+        encoding="utf-8",
+    )
+
+    result = save_book_to_markdown(books_path, book, existing_file=existing_file)
+
+    assert result == "updated"
+
+
+def test_save_book_created_returns_created(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    book = create_book()
+
+    result = save_book_to_markdown(books_path, book)
+
+    assert result == "created"
+
+
+def test_save_book_unchanged_preserves_body(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
+
+    book = create_book()
+    body_text = "\n## メモ\n面白かった"
+    existing_file = books_path / "Existing_Book.md"
+    existing_file.write_text(
+        f"---\nitem_id: '1000000000'\ntitle: テストタイトル\nauthor: テスト作者名\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 読み終わった\nrating: 5\n---{body_text}",
+        encoding="utf-8",
+    )
+
+    save_book_to_markdown(books_path, book, existing_file=existing_file)
+
+    content = existing_file.read_text(encoding="utf-8")
+
+    assert "## メモ" in content
+    assert "面白かった" in content
+
+
 def test_build_id_book_index_when_item_id_is_not_a_number(tmp_path):
     books_dir = tmp_path / "Books"
     books_dir.mkdir()
