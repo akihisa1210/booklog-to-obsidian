@@ -1,6 +1,4 @@
-def main():
-    print("Hello from booklog-to-obsidian!")
-
+from booklog_sync.main import main
 
 if __name__ == "__main__":
     main()

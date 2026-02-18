@@ -102,15 +102,15 @@ def generate_filename(
     return sanitized
 
 
-def build_id_book_index(books_dir: Path) -> dict[str, Path]:
+def build_id_book_index(books_path: Path) -> dict[str, Path]:
     """
     ディレクトリ内の全ファイルを走査し、item_idがあるファイルとそのファイルパスをもつ辞書を返す。
     """
     index = {}
-    if not books_dir.exists():
+    if not books_path.exists():
         return index
 
-    for file_path in books_dir.glob("*.md"):
+    for file_path in books_path.glob("*.md"):
         content = file_path.read_text(encoding="utf-8")
         match = re.search(
             r'^item_id:\s*["\']?([A-Za-z0-9]+)["\']?', content, re.MULTILINE
@@ -123,8 +123,7 @@ def build_id_book_index(books_dir: Path) -> dict[str, Path]:
 
 
 def save_book_to_markdown(
-    vault_path: str,
-    books_dir: str,
+    books_path: Path,
     book: Book,
     body: str = "",
     existing_file: Path = None,
@@ -145,9 +144,7 @@ def save_book_to_markdown(
             print(f"Updated: {existing_file}")
             return
 
-    base_path = Path(vault_path) / books_dir
-    # TODO ディレクトリ作成は初回の1回だけで十分
-    base_path.mkdir(parents=True, exist_ok=True)
+    books_path.mkdir(parents=True, exist_ok=True)
 
     filename = generate_filename(
         book["author"],
@@ -155,7 +152,7 @@ def save_book_to_markdown(
         book["publisher"],
         book["publish_year"],
     )
-    file_path = base_path / _sanitize_filename(filename)
+    file_path = books_path / _sanitize_filename(filename)
 
     frontmatter = yaml.dump(book, allow_unicode=True, sort_keys=False)
 

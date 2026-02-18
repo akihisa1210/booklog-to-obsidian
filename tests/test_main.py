@@ -5,17 +5,17 @@ def test_run_sync(tmp_path):
         encoding="cp932",
     )
 
-    vault_path = tmp_path / "Vault"
+    books_path = tmp_path / "Vault" / "Books"
 
     from booklog_sync.main import run_sync
 
-    run_sync(csv_file, vault_path, "Books")
+    run_sync(csv_file, books_path)
 
     assert (
-        vault_path / "Books" / "テスト作者名『テストタイトル』（テスト出版社、2020）.md"
+        books_path / "テスト作者名『テストタイトル』（テスト出版社、2020）.md"
     ).exists()
 
-    created_files = list((vault_path / "Books").glob("*.md"))
+    created_files = list(books_path.glob("*.md"))
     assert len(created_files) == 1
 
 
@@ -26,11 +26,10 @@ def test_run_sync_existing_file(tmp_path):
         encoding="cp932",
     )
 
-    vault_path = tmp_path / "Vault"
-    books_dir = "Books"
-    (vault_path / books_dir).mkdir(parents=True)
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
 
-    existing_file = vault_path / books_dir / "Existing_Book.md"
+    existing_file = books_path / "Existing_Book.md"
     existing_file.write_text(
         "---\nitem_id: '1000000000'\ntitle: タイトル\nauthor: 著者A\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating:\n---\n## メモ\n面白かった",
         encoding="utf-8",
@@ -38,9 +37,9 @@ def test_run_sync_existing_file(tmp_path):
 
     from booklog_sync.main import run_sync
 
-    run_sync(csv_file, vault_path, "Books")
+    run_sync(csv_file, books_path)
 
-    assert (vault_path / "Books" / "Existing_Book.md").exists()
+    assert (books_path / "Existing_Book.md").exists()
 
     content = existing_file.read_text(encoding="utf-8")
 
@@ -56,5 +55,5 @@ def test_run_sync_existing_file(tmp_path):
     assert "## メモ" in content
     assert "面白かった" in content
 
-    created_files = list((vault_path / "Books").glob("*.md"))
+    created_files = list(books_path.glob("*.md"))
     assert len(created_files) == 1
