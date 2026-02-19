@@ -19,6 +19,10 @@
   - `watcher.py` - watchdogによるCSVファイル監視
 - `tests/` - テストコード（pytest）
 
+## 開発時の注意
+
+- 動作確認には `uv run booklog-sync` を使う。`uv tool install .` でインストールしたツールはソース変更が反映されないため、開発中の確認には使わない。
+
 ## コーディング規約
 
 - 言語: Python 3.13+
