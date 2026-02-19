@@ -58,6 +58,9 @@ def main():
     config_parser.add_argument(
         "--config", default="config.yaml", help="設定ファイルのパス (デフォルト: config.yaml)"
     )
+    config_parser.add_argument(
+        "--debug", action="store_true", help="DEBUGレベルのログを出力する"
+    )
 
     parser = argparse.ArgumentParser(
         description="ブクログCSVをObsidianに同期するツール",
@@ -73,7 +76,7 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG if args.debug else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
