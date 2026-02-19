@@ -154,7 +154,7 @@ def save_book_to_markdown(
 
     if existing_file and existing_file.exists():
         old_content = existing_file.read_text(encoding="utf-8")
-        parts = old_content.split("---", 2)
+        parts = re.split(r"^---$", old_content, maxsplit=2, flags=re.MULTILINE)
 
         if len(parts) >= 3:
             try:

@@ -146,6 +146,24 @@ def test_save_book_merge_existing_file(tmp_path):
     assert "面白かった" in content
 
 
+def test_save_book_with_triple_dash_in_title(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
+
+    book = create_book({"title": "タイトル---サブタイトル"})
+    existing_file = books_path / "Existing_Book.md"
+    existing_file.write_text(
+        "---\nitem_id: '1000000000'\ntitle: タイトル---サブタイトル\nauthor: テスト作者名\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 読み終わった\nrating: 5\n---\n## メモ\n面白かった",
+        encoding="utf-8",
+    )
+
+    result = save_book_to_markdown(books_path, book, existing_file=existing_file)
+
+    assert result == "unchanged"
+
+
 def test_sanitize_filename():
     filename = " /a "
 
