@@ -362,6 +362,33 @@ def test_save_book_updated_returns_updated(tmp_path):
     assert result == "updated"
 
 
+def test_save_book_update_does_not_add_extra_newline(tmp_path):
+    from booklog_sync.core import save_book_to_markdown
+
+    books_path = tmp_path / "Vault" / "Books"
+    books_path.mkdir(parents=True)
+
+    existing_file = books_path / "Existing_Book.md"
+    existing_file.write_text(
+        "---\nitem_id: '1000000000'\ntitle: テストタイトル\nauthor: テスト作者名\nisbn13: '9784000000001'\npublisher: テスト出版社\npublish_year: '2020'\nstatus: 積読\nrating: 5\n---\n## メモ\n面白かった",
+        encoding="utf-8",
+    )
+
+    # 1回目の更新
+    book1 = create_book({"status": "読み終わった"})
+    save_book_to_markdown(books_path, book1, existing_file=existing_file)
+    content_after_first = existing_file.read_text(encoding="utf-8")
+
+    # 2回目の更新
+    book2 = create_book({"status": "積読"})
+    save_book_to_markdown(books_path, book2, existing_file=existing_file)
+    content_after_second = existing_file.read_text(encoding="utf-8")
+
+    # フロントマターと本文の間の空行数が増えていないことを確認
+    assert content_after_first.count("\n---\n") == 1
+    assert content_after_second.count("\n---\n") == 1
+
+
 def test_save_book_created_returns_created(tmp_path):
     from booklog_sync.core import save_book_to_markdown
 

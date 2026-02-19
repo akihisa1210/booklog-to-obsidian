@@ -172,7 +172,7 @@ def save_book_to_markdown(
                 logger.info("  %s: %s → %s", key, old_val, new_val)
 
             old_props.update(book)
-            content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---\n{parts[2]}"
+            content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---{parts[2]}"
             existing_file.write_text(content, encoding="utf-8")
             logger.info("Updated: %s", existing_file)
             return "updated"
