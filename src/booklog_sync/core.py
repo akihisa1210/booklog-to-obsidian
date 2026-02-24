@@ -145,7 +145,7 @@ def save_book_to_markdown(
     books_path: Path,
     book: Book,
     body: str = "",
-    existing_file: Path = None,
+    existing_file: Optional[Path] = None,
 ) -> str:
     """
     書籍データをMarkdownファイルとして保存する。
