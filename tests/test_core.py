@@ -1,4 +1,13 @@
-from booklog_sync.core import Book, BooklogCSVRow
+from booklog_sync.core import (
+    Book,
+    BooklogCSVRow,
+    _sanitize_filename,
+    build_id_book_index,
+    convert_csv,
+    diff_frontmatter,
+    generate_filename,
+    save_book_to_markdown,
+)
 
 
 def create_booklog_csv_row(props: dict[str, str] | None = None) -> BooklogCSVRow:
@@ -40,8 +49,6 @@ def create_book(props: dict[str, str] | None = None) -> Book:
 def test_convert_row_to_properties():
     row = create_booklog_csv_row()
 
-    from booklog_sync.core import convert_csv
-
     book = convert_csv(row)
 
     assert book["item_id"] == "1000000000"
@@ -57,8 +64,6 @@ def test_convert_row_to_properties():
 def test_convert_row_to_properties_without_rating():
     row = create_booklog_csv_row({"rating": ""})
 
-    from booklog_sync.core import convert_csv
-
     book = convert_csv(row)
 
     assert book["item_id"] == "1000000000"
@@ -72,8 +77,6 @@ def test_convert_row_to_properties_without_rating():
 
 
 def test_save_book_to_markdown(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "MyVault" / "Books"
     book = create_book()
     body = "# 感想\n面白かった"
@@ -107,8 +110,6 @@ rating: 5
 
 
 def test_save_book_merge_existing_file(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -147,8 +148,6 @@ def test_save_book_merge_existing_file(tmp_path):
 
 
 def test_save_book_with_triple_dash_in_title(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -167,21 +166,15 @@ def test_save_book_with_triple_dash_in_title(tmp_path):
 def test_sanitize_filename():
     filename = " /a "
 
-    from booklog_sync.core import _sanitize_filename
-
     assert _sanitize_filename(filename) == "_a"
 
 
 def test_generate_filename():
-    from booklog_sync.core import generate_filename
-
     title = generate_filename("テスト作者名", "テストタイトル", "テスト出版社", "2020")
     assert title == "テスト作者名『テストタイトル』（テスト出版社、2020）.md"
 
 
 def test_generate_filename_long():
-    from booklog_sync.core import generate_filename
-
     # 作者名、タイトル、出版社、出版年をファイル名のフォーマットに合わせて結合すると198バイトになるテストデータ。
     # 拡張.mdを付けると201バイトとなり、このツールのファイル名文字数上限の200バイトを超えてしまう。
     title = generate_filename(
@@ -208,8 +201,6 @@ def test_build_id_book_index(tmp_path):
     file2 = books_dir / "Note.md"
     file2.write_text("# メモ\nitem_idなし", encoding="utf-8")
 
-    from booklog_sync.core import build_id_book_index
-
     index = build_id_book_index(books_dir)
 
     assert index["1000000000"] == file1
@@ -218,8 +209,6 @@ def test_build_id_book_index(tmp_path):
 
 
 def test_diff_frontmatter_no_changes():
-    from booklog_sync.core import diff_frontmatter
-
     book = create_book()
     existing_props = {
         "item_id": "1000000000",
@@ -238,8 +227,6 @@ def test_diff_frontmatter_no_changes():
 
 
 def test_diff_frontmatter_with_changes():
-    from booklog_sync.core import diff_frontmatter
-
     book = create_book({"rating": 3})
     existing_props = {
         "item_id": "1000000000",
@@ -258,8 +245,6 @@ def test_diff_frontmatter_with_changes():
 
 
 def test_diff_frontmatter_multiple_changes():
-    from booklog_sync.core import diff_frontmatter
-
     book = create_book({"rating": 3, "status": "積読", "title": "新タイトル"})
     existing_props = {
         "item_id": "1000000000",
@@ -282,8 +267,6 @@ def test_diff_frontmatter_multiple_changes():
 
 
 def test_diff_frontmatter_rating_none_to_int():
-    from booklog_sync.core import diff_frontmatter
-
     book = create_book({"rating": 5})
     existing_props = {
         "item_id": "1000000000",
@@ -302,8 +285,6 @@ def test_diff_frontmatter_rating_none_to_int():
 
 
 def test_diff_frontmatter_rating_int_to_none():
-    from booklog_sync.core import diff_frontmatter
-
     book = create_book({"rating": None})
     existing_props = {
         "item_id": "1000000000",
@@ -322,8 +303,6 @@ def test_diff_frontmatter_rating_int_to_none():
 
 
 def test_save_book_unchanged_skips_write(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -345,8 +324,6 @@ def test_save_book_unchanged_skips_write(tmp_path):
 
 
 def test_save_book_updated_returns_updated(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -363,8 +340,6 @@ def test_save_book_updated_returns_updated(tmp_path):
 
 
 def test_save_book_update_does_not_add_extra_newline(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -390,8 +365,6 @@ def test_save_book_update_does_not_add_extra_newline(tmp_path):
 
 
 def test_save_book_created_returns_created(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     book = create_book()
 
@@ -401,8 +374,6 @@ def test_save_book_created_returns_created(tmp_path):
 
 
 def test_save_book_unchanged_preserves_body(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -423,8 +394,6 @@ def test_save_book_unchanged_preserves_body(tmp_path):
 
 
 def test_save_book_yaml_parse_error_overwrites(tmp_path):
-    from booklog_sync.core import save_book_to_markdown
-
     books_path = tmp_path / "Vault" / "Books"
     books_path.mkdir(parents=True)
 
@@ -455,8 +424,6 @@ def test_build_id_book_index_when_item_id_is_not_a_number(tmp_path):
     # item_idを持たないファイル
     file2 = books_dir / "Note.md"
     file2.write_text("# メモ\nitem_idなし", encoding="utf-8")
-
-    from booklog_sync.core import build_id_book_index
 
     index = build_id_book_index(books_dir)
 
