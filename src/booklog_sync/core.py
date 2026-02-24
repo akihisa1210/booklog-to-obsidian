@@ -135,7 +135,7 @@ def diff_frontmatter(existing_props: dict, book: Book) -> dict[str, tuple]:
     for key in book:
         old_val = existing_props.get(key)
         new_val = book[key]
-        # 型を統一して比較（例: YAML文字列 "5" vs int 5）
+        # 型を統一せず比較するため、YAML側の型が異なる場合（例: 文字列 "5" vs int 5）は差分として検出される
         if old_val != new_val:
             changes[key] = (old_val, new_val)
     return changes
