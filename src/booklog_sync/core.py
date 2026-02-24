@@ -2,7 +2,7 @@ from pathlib import Path
 import logging
 import yaml
 import re
-from typing import Final, TypedDict, Optional, get_type_hints
+from typing import Final, Literal, TypedDict, Optional, get_type_hints
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,8 @@ class Book(TypedDict):
 
 # ファイル名の最大バイト数。OS上の上限は255バイトだが、何かの操作でファイル名にプレフィックスがつく場合などを考慮して200バイトとする。UTF-8。
 FILENAME_MAX_BYTE_LENGTH: Final = 200
+
+SyncResult = Literal["created", "updated", "unchanged"]
 
 
 def convert_csv(row: BooklogCSVRow) -> Book:
@@ -146,7 +148,7 @@ def save_book_to_markdown(
     book: Book,
     body: str = "",
     existing_file: Optional[Path] = None,
-) -> str:
+) -> SyncResult:
     """
     書籍データをMarkdownファイルとして保存する。
     戻り値: "created", "updated", "unchanged"
@@ -168,13 +170,13 @@ def save_book_to_markdown(
                 logger.debug("Unchanged: %s", existing_file)
                 return "unchanged"
 
+            logger.info("Changes detected in %s:", existing_file)
             for key, (old_val, new_val) in changes.items():
                 logger.info("  %s: %s → %s", key, old_val, new_val)
 
             old_props.update(book)
             content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---{parts[2]}"
             existing_file.write_text(content, encoding="utf-8")
-            logger.info("Updated: %s", existing_file)
             return "updated"
 
     books_path.mkdir(parents=True, exist_ok=True)

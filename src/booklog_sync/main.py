@@ -7,6 +7,7 @@ from booklog_sync.config import load_config
 from booklog_sync.core import (
     BOOKLOG_CSV_COLUMNS,
     Book,
+    SyncResult,
     convert_csv,
     save_book_to_markdown,
     build_id_book_index,
