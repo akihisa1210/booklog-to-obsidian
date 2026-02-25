@@ -1,0 +1,23 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
+      - name: Set up Python
+        run: uv python install 3.13
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run tests
+        run: uv run pytest tests/ -v --log-cli-level=DEBUG --ignore=tests/test_e2e.py
+      - name: Run E2E tests
+        run: uv run pytest tests/test_e2e.py -v -s --log-cli-level=DEBUG

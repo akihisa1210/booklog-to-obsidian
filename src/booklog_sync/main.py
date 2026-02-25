@@ -7,6 +7,7 @@ from booklog_sync.config import load_config
 from booklog_sync.core import (
     BOOKLOG_CSV_COLUMNS,
     Book,
+    SyncResult,
     convert_csv,
     save_book_to_markdown,
     build_id_book_index,
@@ -22,6 +23,10 @@ def run_sync(csv_path: Path, books_path: Path):
     id_book_index = build_id_book_index(books_path)
     logger.debug("id_book_index: %s", id_book_index)
 
+    created = 0
+    updated = 0
+    unchanged = 0
+
     with open(csv_path, "r", encoding="cp932") as f:
         reader = csv.DictReader(f, fieldnames=BOOKLOG_CSV_COLUMNS)
         for row in reader:
@@ -31,11 +36,20 @@ def run_sync(csv_path: Path, books_path: Path):
             existing_file = id_book_index.get(item_id)
 
             if existing_file:
-                save_book_to_markdown(
+                result = save_book_to_markdown(
                     books_path, book, existing_file=existing_file
                 )
             else:
-                save_book_to_markdown(books_path, book)
+                result = save_book_to_markdown(books_path, book)
+
+            if result == "created":
+                created += 1
+            elif result == "updated":
+                updated += 1
+            elif result == "unchanged":
+                unchanged += 1
+
+    logger.info("Sync completed: %d created, %d updated, %d unchanged", created, updated, unchanged)
 
 
 def main():
@@ -44,6 +58,9 @@ def main():
     config_parser = argparse.ArgumentParser(add_help=False)
     config_parser.add_argument(
         "--config", default="config.yaml", help="設定ファイルのパス (デフォルト: config.yaml)"
+    )
+    config_parser.add_argument(
+        "--debug", action="store_true", help="DEBUGレベルのログを出力する"
     )
 
     parser = argparse.ArgumentParser(
@@ -60,7 +77,7 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG if args.debug else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
 

@@ -1,7 +1,10 @@
 from pathlib import Path
+import logging
 import yaml
 import re
-from typing import Final, TypedDict, Optional, get_type_hints
+from typing import Final, Literal, TypedDict, Optional, get_type_hints
+
+logger = logging.getLogger(__name__)
 
 
 class BooklogCSVRow(TypedDict, total=False):
@@ -40,6 +43,8 @@ class Book(TypedDict):
 
 # ファイル名の最大バイト数。OS上の上限は255バイトだが、何かの操作でファイル名にプレフィックスがつく場合などを考慮して200バイトとする。UTF-8。
 FILENAME_MAX_BYTE_LENGTH: Final = 200
+
+SyncResult = Literal["created", "updated", "unchanged"]
 
 
 def convert_csv(row: BooklogCSVRow) -> Book:
@@ -122,27 +127,57 @@ def build_id_book_index(books_path: Path) -> dict[str, Path]:
     return index
 
 
+def diff_frontmatter(existing_props: dict, book: Book) -> dict[str, tuple]:
+    """
+    既存のfrontmatterと新しい書籍データを比較し、差分を返す。
+    戻り値: {フィールド名: (旧値, 新値)} の辞書。差分がなければ空辞書。
+    比較対象はBookのキーのみ（既存ファイルに余分なキーがあっても無視）。
+    """
+    changes: dict[str, tuple] = {}
+    for key in book:
+        old_val = existing_props.get(key)
+        new_val = book[key]
+        # 型を統一せず比較するため、YAML側の型が異なる場合（例: 文字列 "5" vs int 5）は差分として検出される
+        if old_val != new_val:
+            changes[key] = (old_val, new_val)
+    return changes
+
+
 def save_book_to_markdown(
     books_path: Path,
     book: Book,
     body: str = "",
-    existing_file: Path = None,
-):
+    existing_file: Optional[Path] = None,
+) -> SyncResult:
     """
-    書籍データをMarkdownファイルとして保存する
+    書籍データをMarkdownファイルとして保存する。
+    戻り値: "created", "updated", "unchanged"
     """
 
     if existing_file and existing_file.exists():
         old_content = existing_file.read_text(encoding="utf-8")
-        parts = old_content.split("---", 2)
+        parts = re.split(r"^---$", old_content, maxsplit=2, flags=re.MULTILINE)
 
         if len(parts) >= 3:
-            old_props = yaml.safe_load(parts[1]) or {}
+            try:
+                old_props = yaml.safe_load(parts[1]) or {}
+            except yaml.YAMLError:
+                logger.warning("Failed to parse frontmatter, overwriting: %s", existing_file)
+                old_props = {}
+            changes = diff_frontmatter(old_props, book)
+
+            if not changes:
+                logger.debug("Unchanged: %s", existing_file)
+                return "unchanged"
+
+            logger.info("Changes detected in %s:", existing_file)
+            for key, (old_val, new_val) in changes.items():
+                logger.info("  %s: %s → %s", key, old_val, new_val)
+
             old_props.update(book)
-            content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---\n{parts[2]}"
+            content = f"---\n{yaml.dump(old_props, allow_unicode=True, sort_keys=False)}---{parts[2]}"
             existing_file.write_text(content, encoding="utf-8")
-            print(f"Updated: {existing_file}")
-            return
+            return "updated"
 
     books_path.mkdir(parents=True, exist_ok=True)
 
@@ -159,5 +194,5 @@ def save_book_to_markdown(
     content = f"---\n{frontmatter}---\n{body}\n"
     file_path.write_text(content, encoding="utf-8")
 
-    print(f"Saved: {file_path}")
-    return
+    logger.info("Created: %s", file_path)
+    return "created"
