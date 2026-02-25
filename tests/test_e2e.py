@@ -32,12 +32,24 @@ def write_config(tmp_path: Path, csv_path: Path, books_path: Path) -> Path:
     return config_file
 
 
+def print_preconditions(csv_path: Path, books_path: Path):
+    """事前状態（CSV・既存 .md ファイル）を出力する。"""
+    print("\n=== Input CSV ===")
+    print(csv_path.read_text(encoding="cp932"))
+    if books_path.exists():
+        for md_file in sorted(books_path.glob("*.md")):
+            print(f"\n=== Existing: {md_file.name} ===")
+            print(md_file.read_text(encoding="utf-8"))
+    else:
+        print("\n(no existing .md files)")
+
+
 def print_result(result: subprocess.CompletedProcess, books_path: Path):
     """CLI の stderr と生成ファイルの内容を出力する。"""
     print("\n=== CLI stderr ===")
     print(result.stderr)
     for md_file in sorted(books_path.glob("*.md")):
-        print(f"\n=== {md_file.name} ===")
+        print(f"\n=== Result: {md_file.name} ===")
         print(md_file.read_text(encoding="utf-8"))
 
 
@@ -55,6 +67,7 @@ def test_e2e_sync_create(tmp_path):
         "...,1000000000,9784000000001,...,5,読み終わった,...,...,...,...,...,テストタイトル,テスト作者名,テスト出版社,2020,...",
     ])
     config_file = write_config(tmp_path, csv_path, books_path)
+    print_preconditions(csv_path, books_path)
 
     result = run_booklog_sync(config_file)
     print_result(result, books_path)
@@ -106,6 +119,7 @@ def test_e2e_sync_update(tmp_path):
         "...,1000000000,9784000000001,...,5,読み終わった,...,...,...,...,...,タイトル,著者A,テスト出版社,2020,...",
     ])
     config_file = write_config(tmp_path, csv_path, books_path)
+    print_preconditions(csv_path, books_path)
 
     result = run_booklog_sync(config_file)
     print_result(result, books_path)
@@ -147,6 +161,7 @@ def test_e2e_sync_unchanged(tmp_path):
         "...,1000000000,9784000000001,...,5,読み終わった,...,...,...,...,...,テストタイトル,テスト作者名,テスト出版社,2020,...",
     ])
     config_file = write_config(tmp_path, csv_path, books_path)
+    print_preconditions(csv_path, books_path)
 
     result = run_booklog_sync(config_file)
     print_result(result, books_path)
@@ -200,6 +215,7 @@ def test_e2e_sync_multiple_books(tmp_path):
         "...,3000000000,9784000000003,...,4,読み終わった,...,...,...,...,...,変更なしタイトル,著者C,出版社C,2022,...",
     ])
     config_file = write_config(tmp_path, csv_path, books_path)
+    print_preconditions(csv_path, books_path)
 
     result = run_booklog_sync(config_file)
     print_result(result, books_path)
