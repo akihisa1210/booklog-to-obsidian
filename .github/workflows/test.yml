@@ -18,4 +18,6 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
       - name: Run tests
-        run: uv run pytest tests/ -v --log-cli-level=DEBUG
+        run: uv run pytest tests/ -v --log-cli-level=DEBUG --ignore=tests/test_e2e.py
+      - name: Run E2E tests
+        run: uv run pytest tests/test_e2e.py -v -s --log-cli-level=DEBUG
